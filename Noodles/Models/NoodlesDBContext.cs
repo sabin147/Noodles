@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,14 +11,19 @@ namespace Noodles.Models;
 
 public partial class NoodlesDBContext : DbContext
 {
-    public NoodlesDBContext()
+    private readonly IConfiguration Configuration;
+
+    public NoodlesDBContext(DbContextOptions<NoodlesDBContext> options)
+    : base(options)
     {
     }
 
-    public NoodlesDBContext(DbContextOptions<NoodlesDBContext> options)
+    public NoodlesDBContext(DbContextOptions<NoodlesDBContext> options, IConfiguration configuration)
         : base(options)
     {
+        Configuration = configuration;
     }
+
 
     public virtual DbSet<FoodItem> FoodItems { get; set; }
 
@@ -29,15 +35,27 @@ public partial class NoodlesDBContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<Subscription> Subscriptions { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=NoodlesDB;Integrated Security=True");
+    {
+        // Check if optionsBuilder is already configured (e.g., from DI)
+        if (!optionsBuilder.IsConfigured)
+        {
+            // Use the configuration to get the connection string
+            string connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            // Configure the DbContext to use the specified connection string
+            optionsBuilder.UseSqlServer(connectionString);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         // Define a keyless entity type using HasNoKey
+
         
         modelBuilder.Entity<FoodItem>(entity =>
         {
@@ -79,8 +97,11 @@ public partial class NoodlesDBContext : DbContext
         {
             entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCACCC4CADE8");
         });
-
-        OnModelCreatingPartial(modelBuilder);
+        modelBuilder.Entity<Subscription>()
+        .Property(s => s.Price)
+        .HasColumnType("decimal(18,2)"); // Adjust precision and scale as needed
+    
+    OnModelCreatingPartial(modelBuilder);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

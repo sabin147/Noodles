@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Noodles.Models;
@@ -14,6 +15,7 @@ public partial class Reservation
     [Column("ReservationID")]
     public int ReservationId { get; set; }
 
+    
     [Column("UserID")]
     public int UserId { get; set; }
 
@@ -22,6 +24,7 @@ public partial class Reservation
 
     public int? TableNumber { get; set; }
 
+    [JsonIgnore]
     [ForeignKey("UserId")]
     [InverseProperty("Reservations")]
     public virtual User User { get; set; }

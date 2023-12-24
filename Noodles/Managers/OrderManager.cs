@@ -47,7 +47,44 @@ namespace Noodles.Managers
             }
             return item;
         }
-        public async Task<Order> CreateOrder(int userId, List<OrderItemDTO> orderItems)
+        //public async Task<Order> CreateOrder(int userId, List<OrderItemDTO> orderItems)
+        //{
+        //    decimal totalAmount = 0;
+
+        //    var order = new Order
+        //    {
+        //        UserId = userId,
+        //        OrderDate = DateTime.Now,
+        //        OrderItems = new List<OrderItem>(),        
+        //    };
+
+        //    foreach (var item in orderItems)
+        //    {
+        //        var foodItem = await _context.FoodItems.FindAsync(item.FoodItemId);
+        //        if (foodItem == null)
+        //        {
+        //            throw new ArgumentException("Invalid food item ID: " + item.FoodItemId);
+        //        }
+
+        //        var orderItem = new OrderItem
+        //        {
+        //            FoodItemId = item.FoodItemId,
+        //            Quantity = item.Quantity,
+        //            Subtotal = foodItem.Price * item.Quantity
+        //        };
+
+        //        totalAmount += orderItem.Subtotal;
+        //        order.OrderItems.Add(orderItem);
+        //    }
+
+        //    order.TotalAmount = totalAmount;
+
+        //    _context.Orders.Add(order);
+        //    await _context.SaveChangesAsync();
+
+        //    return order;
+        //}
+        public async Task<Order> CreateOrder(int userId, List<OrderItemDTO> orderItems, decimal subscriptionDiscountPercentage)
         {
             decimal totalAmount = 0;
 
@@ -56,8 +93,6 @@ namespace Noodles.Managers
                 UserId = userId,
                 OrderDate = DateTime.Now,
                 OrderItems = new List<OrderItem>(),
-               
-                
             };
 
             foreach (var item in orderItems)
@@ -78,6 +113,9 @@ namespace Noodles.Managers
                 totalAmount += orderItem.Subtotal;
                 order.OrderItems.Add(orderItem);
             }
+
+            // Apply subscription discount
+            totalAmount *= (1 - subscriptionDiscountPercentage / 100);
 
             order.TotalAmount = totalAmount;
 

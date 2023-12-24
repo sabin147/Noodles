@@ -1,29 +1,32 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Noodles.Managers;
 using Noodles.Models;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using System.Security.Claims;
 
 namespace Noodles.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FoodItemController : ControllerBase
+    public class ReservationController : ControllerBase
     {
-        private readonly FoodItemManager _manager;
-        public FoodItemController(NoodlesDBContext context)
+        private readonly ReservationManager _manager;
+        public ReservationController(ReservationManager manager)
         {
-            _manager = new FoodItemManager(context);
+            _manager = manager;
         }
 
-        // GET: api/<FoodItemController>
+        // GET: api/<ReservationController>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [HttpGet]//, Authorize(Roles ="Admin")]
-        public ActionResult<IEnumerable<FoodItem>> Get()
+        public ActionResult<IEnumerable<Reservation>> Get()
         {
-            IEnumerable<FoodItem> item = _manager.GetAll();
+
+
+
+            IEnumerable<Reservation> item = _manager.GetAll();
             if (item.Count() == 0)
             {
                 return NoContent();
@@ -31,46 +34,53 @@ namespace Noodles.Controllers
             return Ok(item);
         }
 
-        // GET api/<FoodItemController>/5
+        // GET api/<ReservationController>/5
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [HttpGet("{id}")]
-        public ActionResult<FoodItem> Get(int id)
+        public ActionResult<Reservation> Get(int id)
         {
-            FoodItem? result = _manager.GetById(id);
+            Reservation? result = _manager.GetById(id);
             if (result == null)
                 return NotFound();
             else
                 return Ok(result);
         }
-        // POST api/<FoodItemController>
+        // POST api/<ReservationController>
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [HttpPost] //, Authorize(Roles = "Admin")]
-        public ActionResult<FoodItem> Post([FromBody] FoodItem value)
+        [HttpPost]
+        [Authorize]
+        public ActionResult<Reservation> Post([FromBody] Reservation value)
         {
             try
             {
-                FoodItem result = _manager.Add(value);
-                return Created("api/footitem/" + result.FoodItemId, result);
+                // Get the logged-in user's ID from your authentication mechanism
+                
+                int loggedInUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                Reservation result = _manager.Add(value, loggedInUserId);
+                return Created($"api/reservation/{result.ReservationId}", result);
             }
             catch (Exception ex)
             when (ex is ArgumentNullException || ex is ArgumentOutOfRangeException)
+
             {
                 return BadRequest(ex.Message);
             }
         }
 
-        // PUT api/<FoodItemController>/5
+
+        // PUT api/<ReservationController>/5
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [HttpPut("{id}")]
-        public ActionResult<FoodItem> Put(int id, [FromBody] FoodItem value)
+        public ActionResult<Reservation> Put(int id, [FromBody] Reservation value)
         {
             try
             {
-                FoodItem? result = _manager.Update(id, value);
+                Reservation? result = _manager.Update(id, value);
                 if (result == null)
                 {
                     return NotFound();
@@ -85,18 +95,18 @@ namespace Noodles.Controllers
             }
         }
 
-        // DELETE api/<FoodItemController>/5
+        // DELETE api/<ReservationController>/5
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [HttpDelete("{id}")]
-        public ActionResult<FoodItem> Delete(int id)
+        public ActionResult<Reservation> Delete(int id)
         {
-            FoodItem? result = _manager.Delete(id);
+            Reservation? result = _manager.Delete(id);
             if (result == null)
             {
                 return NotFound();
             }
             return Ok(result);
-        }        
+        }
     }
 }

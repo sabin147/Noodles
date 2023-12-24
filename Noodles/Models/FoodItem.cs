@@ -13,6 +13,7 @@ public partial class FoodItem
 {
     [Key]
     [Column("FoodItemID")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int FoodItemId { get; set; }
 
     [Required]

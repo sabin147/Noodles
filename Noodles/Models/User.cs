@@ -14,6 +14,7 @@ public partial class User
 {
     [Key]
     [Column("UserID")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int UserId { get; set; }
 
     [Required]
@@ -21,10 +22,14 @@ public partial class User
     public string Username { get; set; }
 
     [Required]
-    [StringLength(100)]
-    public string Password { get; set; }
+    [StringLength(256)]
+    public byte[] PasswordHash { get; set; }
 
     [Required]
+    [StringLength(256)]
+    public byte[] PasswordSalt { get; set; }
+
+    
     [StringLength(100)]
     public string Email { get; set; }
     [JsonIgnore]
@@ -33,4 +38,10 @@ public partial class User
     [JsonIgnore]
     [InverseProperty("User")]
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+
+    [ForeignKey("SubscriptionId")]
+    public int? SubscriptionId { get; set; }
+
+    [JsonIgnore]
+    public virtual Subscription Subscription { get; set; }
 }
