@@ -1,3 +1,5 @@
+
+
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +35,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<OrderManager>();
 builder.Services.AddScoped<UserManager>();
 builder.Services.AddScoped<SubscriptionManager>();
+builder.Services.AddScoped<ReservationManager>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -53,7 +57,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5174")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });

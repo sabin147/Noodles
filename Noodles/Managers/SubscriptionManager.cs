@@ -48,6 +48,13 @@ namespace Noodles.Managers
             }
             return item;
         }
+        public List<Subscription> GetSubscriptionHistoryForUser(int userId)
+        {
+            return _context.Users
+                .Where(u => u.UserId == userId)
+                .Select(u => u.Subscription)
+                .ToList();
+        }
     }
 
 }

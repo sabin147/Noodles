@@ -44,4 +44,46 @@ public partial class User
 
     [JsonIgnore]
     public virtual Subscription Subscription { get; set; }
+
+    public string Role { get; set; }
+
+    public void ValidateUserId()
+    {
+        if (UserId < 1)
+        {
+            throw new ArgumentOutOfRangeException("UserId must be a positive number!");
+        }
+    }
+
+    public void ValidateUsername()
+    {
+        if (Username == null)
+        {
+            throw new ArgumentNullException("Username cannot be null. You need to provide a username.");
+        }
+        else if (Username.Length < 2)
+        {
+            throw new ArgumentOutOfRangeException("Username needs to be at least 2 characters.");
+        }
+    }
+
+    public void ValidateEmail()
+    {
+        // You may use a regular expression or other validation logic for email validation.
+        // For simplicity, I'm checking if it contains '@'.
+        if (Email == null || !Email.Contains('@'))
+        {
+            throw new ArgumentException("Invalid email format.");
+        }
+    }
+
+    public void ValidateRole()
+    {
+        // You may have specific roles that are allowed. For simplicity, I'm checking if it's not empty.
+        if (string.IsNullOrWhiteSpace(Role))
+        {
+            throw new ArgumentException("Role cannot be null or empty.");
+        }
+    }
+
 }

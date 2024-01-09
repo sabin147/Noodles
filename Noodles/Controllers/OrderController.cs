@@ -6,6 +6,7 @@ using Noodles.Managers;
 using Noodles.Models;
 using System.Data;
 using System.Security.Claims;
+using System.Text;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,20 +16,22 @@ namespace Noodles.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
+        
+
         private readonly OrderManager _manager;
         private readonly UserManager _userManager;
         private readonly SubscriptionManager _subscriptionManager;
 
-        public OrderController(OrderManager context, UserManager userManager, SubscriptionManager subscriptionManager)
+        public OrderController(OrderManager manager, UserManager userManager, SubscriptionManager subscriptionManager)
         {
-            _manager = context;
+            _manager = manager;
             _userManager = userManager;
             _subscriptionManager = subscriptionManager;
         }
 
 
-        //[Authorize(Roles = "Admin")]
-        //[Route("api/[controller]")]
+       
+        
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [HttpGet]
@@ -41,11 +44,10 @@ namespace Noodles.Controllers
             }
             return Ok(item);
         }
-        //[Authorize(Roles = "Admin")]
-        //[Route("api/[controller]")]
+        
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [HttpGet("{id}")]
+        [HttpGet("{id}"), Authorize]
         public ActionResult<Order> Get(int id)
         {
             Order? result = _manager.GetById(id);
@@ -55,41 +57,8 @@ namespace Noodles.Controllers
                 return Ok(result);
         }
 
-
-
-        // Implement the endpoint to allow users to place an order
-        //[Authorize(Roles = "Customer")]
-        //[HttpPost]
-        //[Authorize]
-        //public async Task<IActionResult> CreateOrder([FromBody] List<OrderItemDTO> orderItems)
-        //{
-        //    var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    Console.WriteLine($"User Id claim: {userIdClaim}");
-        //    int userId;
-
-        //    if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out userId))
-        //    {
-        //        // Log or handle the case where user ID is not found or not valid
-        //        Console.WriteLine("User ID not found or not valid");
-        //        return BadRequest("User ID not found or not valid");
-        //    }
-
-        //    Console.WriteLine($"Parsed User ID: {userId}");
-
-        //    try
-        //    {
-        //        var order = await _manager.CreateOrder(userId, orderItems);
-        //        Console.WriteLine($"Order created successfully for User ID: {userId}");
-        //        return Ok("Order created successfully");
-        //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        Console.WriteLine($"Error creating order: {ex.Message}");
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
         [HttpPost]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> CreateOrder([FromBody] List<OrderItemDTO> orderItems)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -137,6 +106,32 @@ namespace Noodles.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet("orderHistory")]
+        [Authorize]
+        public IActionResult GetOrderHistory()
+        {
+            try
+            {
+                // Retrieve the authenticated user's ID from claims or wherever you store it
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return BadRequest("User ID not found or not valid.");
+                }
+
+                var orderHistory = _manager.GetOrderHistoryForUser(userId);
+                return Ok(orderHistory);
+            }
+            catch (Exception ex)
+            {
+                // Log the error or handle it accordingly
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+        
+
 
     }
 }
+

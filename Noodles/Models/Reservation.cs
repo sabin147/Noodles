@@ -28,4 +28,36 @@ public partial class Reservation
     [ForeignKey("UserId")]
     [InverseProperty("Reservations")]
     public virtual User User { get; set; }
+
+    public void ValidateReservationId()
+    {
+        if (ReservationId < 1)
+        {
+            throw new ArgumentOutOfRangeException("ReservationId must be a positive number!");
+        }
+    }
+
+    public void ValidateUserId()
+    {
+        if (UserId < 1)
+        {
+            throw new ArgumentOutOfRangeException("UserId must be a positive number!");
+        }
+    }
+
+    public void ValidateReservationDateTime()
+    {
+        if (ReservationDateTime < DateTime.Now)
+        {
+            throw new ArgumentOutOfRangeException("ReservationDateTime cannot be in the past.");
+        }
+    }
+
+    public void ValidateTableNumber()
+    {
+        if (TableNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException("TableNumber must be a positive number!");
+        }
+    }
 }

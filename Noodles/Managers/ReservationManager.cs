@@ -48,6 +48,14 @@ namespace Noodles.Managers
             }
             return item;
         }
+        public List<Reservation> GetReservationHistoryForUser(int userId)
+        {
+            // Retrieve order history for the specified user
+            return _context.Reservations
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.ReservationDateTime)
+                .ToList();
+        }
     }
 }
 

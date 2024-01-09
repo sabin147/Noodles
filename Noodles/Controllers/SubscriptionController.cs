@@ -24,7 +24,7 @@ namespace Noodles.Controllers
         // GET: api/<SubscriptionController>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [HttpGet]//, Authorize(Roles ="Admin")]
+        [HttpGet, Authorize(Roles ="Admin,Customer")]
         public ActionResult<IEnumerable<Subscription>> Get()
         {
             IEnumerable<Subscription> item = _manager.GetAll();
@@ -38,7 +38,7 @@ namespace Noodles.Controllers
         // GET api/<SubscriptionController>/5
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [HttpGet("{id}")]
+        [HttpGet("{id}"), Authorize(Roles ="Admin,Customer")]
         public ActionResult<Subscription> Get(int id)
         {
             Subscription? result = _manager.GetById(id);
@@ -50,7 +50,7 @@ namespace Noodles.Controllers
         // POST api/<SubscriptionController>
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [HttpPost] //, Authorize(Roles = "Admin")]
+        [HttpPost, Authorize(Roles = "Admin")]
         public ActionResult<Subscription> Post([FromBody] Subscription value)
         {
             try
@@ -69,7 +69,7 @@ namespace Noodles.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [HttpPut("{id}")]
+        [HttpPut("{id}"), Authorize(Roles = "Admin")]
         public ActionResult<Subscription> Put(int id, [FromBody] Subscription value)
         {
             try
@@ -92,7 +92,7 @@ namespace Noodles.Controllers
         // DELETE api/<SubscriptionController>/5
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [HttpDelete("{id}")]
+        [HttpDelete("{id}")]//, Authorize(Roles="Admin")]
         public ActionResult<Subscription> Delete(int id)
         {
             Subscription? result = _manager.Delete(id);
@@ -103,46 +103,6 @@ namespace Noodles.Controllers
             return Ok(result);
         }
 
-        //[HttpPost("choose-subscription")]
-        //[Authorize]
-        //public ActionResult ChooseSubscription(int subscriptionId)
-        //{
-        //    try
-        //    {
-        //        // Get the user ID of the logged-in user
-        //        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        //        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-        //        {
-        //            // Log or handle the case where user ID is not found or not valid
-        //            return BadRequest("User ID not found or not valid");
-        //        }
-
-        //        var user = _userManager.GetById(userId);
-
-        //        if (user == null)
-        //        {
-        //            return BadRequest("User not found.");
-        //        }
-
-        //        // Fetch the selected subscription from the database
-        //        var subscription = _manager.GetById(subscriptionId);
-        //        if (subscription == null)
-        //        {
-        //            return BadRequest("Invalid subscription selected.");
-        //        }
-
-        //        // Update the user's subscription
-        //        user.SubscriptionId = subscriptionId;
-        //        _userManager.Update(user.UserId, user);
-
-        //        return Ok("Subscription selected successfully.");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
         [HttpPost("choose-subscription")]
         [Authorize]
         public ActionResult ChooseSubscription(int? subscriptionId)
@@ -192,6 +152,29 @@ namespace Noodles.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+        [HttpGet("subscriptionHistory")]
+        [Authorize]
+        public IActionResult GetSubscriptionHistory()
+        {
+            try
+            {
+                // Retrieve the authenticated user's ID from claims or wherever you store it
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return BadRequest("User ID not found or not valid.");
+                }
+
+                var orderHistory = _manager.GetSubscriptionHistoryForUser(userId);
+                return Ok(orderHistory);
+            }
+            catch (Exception ex)
+            {
+                // Log the error or handle it accordingly
+                return StatusCode(500, "Internal Server Error");
             }
         }
 

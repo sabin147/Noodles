@@ -46,5 +46,13 @@ namespace Noodles.Managers
             }
             return item;
         }
+        public List<FoodItem> GetFoodHistoryForUser(int userId)
+        {
+            return _context.FoodItems
+                .Where(foodItem => foodItem.OrderItems.Any(orderItem => orderItem.Order.UserId == userId))
+                .OrderByDescending(foodItem => foodItem.OrderItems.OrderByDescending(orderItem => orderItem.Order.OrderDate).FirstOrDefault().Order.OrderDate)
+                .ToList();
+        }
+
     }
 }

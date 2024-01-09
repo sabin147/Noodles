@@ -22,21 +22,15 @@ namespace Noodles.Controllers
     {
         private readonly UserManager _manager;
         private readonly IConfiguration _configuration;
-        //public UserController(IConfiguration configuration, NoodlesDBContext context)
-        //{
-        //    _configuration = configuration;
-        //    _manager = new UserManager(context);
-        //}
+     
         public UserController(UserManager userManager, IConfiguration configuration, NoodlesDBContext context)
         {
             _manager = userManager;
             _configuration = configuration;
         }
 
-
-
         [HttpGet("current-user")]
-        [Authorize]
+        [Authorize, Authorize(Roles = "Admin,Employee,Customer")]
         public ActionResult<object> GetCurrentUser()
         {
             try
@@ -46,6 +40,9 @@ namespace Noodles.Controllers
                 var userIdClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier);
                 var email = User.FindFirstValue(ClaimTypes.Email);
                 var role = User.FindFirstValue(ClaimTypes.Role);
+               
+
+
 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 {
@@ -62,9 +59,8 @@ namespace Noodles.Controllers
             }
         }
 
-
-        [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDTO request)
+        [HttpPost("register-admin"), Authorize(Roles = "Admin")]
+        public async Task<ActionResult<User>> RegisterAdmin(UserDTO request)
         {
 
             try
@@ -83,7 +79,8 @@ namespace Noodles.Controllers
                     Username = request.Username,
                     PasswordHash = passwordHash,
                     PasswordSalt = passwordSalt,
-                    Email = request.Email
+                    Email = request.Email,
+                    Role = "Admin"
                 };
 
                 // Add the user to the database
@@ -99,18 +96,78 @@ namespace Noodles.Controllers
 
 
         }
+        [HttpPost("register-employee"), Authorize(Roles = "Admin")]
+        public async Task<ActionResult<User>> RegisterEmployee (UserDTO request)
+        {
+            try
+            {             // Check if the username already exists
+                if (_manager.GetAll().Any(u => u.Username == request.Username))
+                {
+                    return BadRequest("Username already exists.");
+                }
+                CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
+                // Create a new User object
+                var newUser = new User
+                {
+                    Username = request.Username,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
+                    Email = request.Email,
+                    Role = "Employee"
+                };
+                // Add the user to the database
+                var result = _manager.Add(newUser);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpPost("register-customer")]//, Authorize(Roles = "Admin")]
+        public async Task<ActionResult<User>> RegisterCustomer(UserDTO request)
+        {
+            try
+            {
+                // Check if the username already exists
+                if (_manager.GetAll().Any(u => u.Username == request.Username))
+                {
+                    return BadRequest("Username already exists.");
+                }
 
-        [HttpPost("login")]
+                CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
+
+                // Create a new User object
+                var newUser = new User
+                {
+                    Username = request.Username,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt,
+                    Email = request.Email,
+                    Role = "Customer"
+                };
+
+                // Add the user to the database
+                var result = _manager.Add(newUser);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("login")]//, Authorize(Roles = "Admin,Employee,Customer")]
 
         public async Task<ActionResult<string>> Login(LoginViewModel request)
         {
             //var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.Username == request.Username);
-
             try
             {
                 // Fetch the user from the database
                 var user = _manager.GetAll().SingleOrDefault(u => u.Email == request.Email);
-
                 if (user == null)
                 {
                     return BadRequest("User not found.");
@@ -120,7 +177,6 @@ namespace Noodles.Controllers
                 {
                     return BadRequest("Wrong Password. ");
                 }
-
                 string token = CreateToken(user);
                 return Ok(token);
             }
@@ -128,8 +184,6 @@ namespace Noodles.Controllers
             {
                 return BadRequest(ex.Message);
             }
-
-
         }
    
 
@@ -140,7 +194,8 @@ namespace Noodles.Controllers
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email), // Include the user's email here
-                new Claim(ClaimTypes.Role, "Admin") // Include the user's role here
+                new Claim(ClaimTypes.Role, user.Role), // Include the user's role here
+               
             };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value));
@@ -178,7 +233,7 @@ namespace Noodles.Controllers
 
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [HttpGet]
+        [HttpGet]//, Authorize(Roles = "Admin")]
         public ActionResult<IEnumerable<User>> GetAll()
         {
             IEnumerable<User> item = _manager.GetAll();
@@ -192,7 +247,7 @@ namespace Noodles.Controllers
         // GET api/<UserController>/5
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [HttpGet("{id}")]
+        [HttpGet("{id}"), Authorize(Roles = "Admin")]
         public ActionResult<User> Get(int id)
         {
             User? result = _manager.GetById(id);
@@ -204,7 +259,7 @@ namespace Noodles.Controllers
         // POST api/<UserController>
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        [HttpPost]
+        [HttpPost, Authorize(Roles = "Admin")]
         public ActionResult<User> Post([FromBody] User value)
         {
             try
@@ -223,7 +278,7 @@ namespace Noodles.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [HttpPut("{id}")]
+        [HttpPut("{id}"), Authorize(Roles = "Admin")]
         public ActionResult<User> Put(int id, [FromBody] User value)
         {
             try
@@ -246,7 +301,7 @@ namespace Noodles.Controllers
         // DELETE api/<UserController>/5
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [HttpDelete("{id}")]
+        [HttpDelete("{id}"), Authorize(Roles = "Admin,Customer")]
         public ActionResult<User> Delete(int id)
         {
             User? result = _manager.Delete(id);
@@ -259,3 +314,4 @@ namespace Noodles.Controllers
          
     }
 }
+

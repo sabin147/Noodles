@@ -27,5 +27,12 @@ namespace Noodles.Managers
             }
             return item;
         }
+        public List<OrderItem> GetBasketHistoryForUser(int orderId)
+        {
+            // Retrieve order history for the specified user
+            return _context.OrderItems
+                .Where(o => o.Order.UserId == orderId)
+                .ToList();
+        }
     }
 }
